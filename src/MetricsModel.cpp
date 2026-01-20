@@ -24,12 +24,21 @@ void MetricsModel::run()
     io_.run();
 }
 
+void MetricsModel::registerArgs(d3156::Args::Builder &bldr)
+{
+    bldr.setVersion("MetricsModel " + std::string(METRICS_MODEL_VERSION));
+}
+
 MetricsModel::~MetricsModel()
 {
     try {
+        stopToken = true;
         io_guard.reset();
+        std::cout << G_MetricsModel << "Io-context guard canceled" << std::endl;
         upload_timer_.cancel();
+        std::cout << G_MetricsModel << "Metrics timer canceled" << std::endl;
         if (!thread_.joinable()) return;
+        std::cout << G_MetricsModel << "Thread joinable, try join in " << stopThreadTimeout.count() << " milliseconds" << std::endl;
         if (thread_.timed_join(stopThreadTimeout)) return;
         std::cout << Y_MetricsModel
                   << "Metrics upload thread was not terminated, attempting to force stop io_context..." << std::endl;
@@ -51,7 +60,7 @@ MetricsModel::~MetricsModel()
 void MetricsModel::timer_handler(const boost::system::error_code &ec)
 {
     if (ec && ec != boost::asio::error::operation_aborted) std::cout << R_MetricsModel << ec.message() << std::endl;
-    if (ec || !io_guard.owns_work()) return;
+    if (ec || stopToken) return;
     try {
         std::lock_guard<std::mutex> lock(statistics_mutex_);
         for (auto &uploader : uploaders_)
@@ -59,7 +68,7 @@ void MetricsModel::timer_handler(const boost::system::error_code &ec)
     } catch (std::exception &e) {
         std::cout << R_MetricsModel << "Exception throwed in timer_handler: " << e.what() << std::endl;
     }
-    if (!io_guard.owns_work()) return;
+    if (stopToken) return;
     upload_timer_.expires_after(statisticInterval);
     upload_timer_.async_wait(std::bind(&MetricsModel::timer_handler, this, std::placeholders::_1));
 }

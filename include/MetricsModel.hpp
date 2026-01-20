@@ -2,6 +2,7 @@
 #include "MetricUploader.hpp"
 #include "Metrics.hpp"
 #include <PluginCore/IModel.hpp>
+#include <atomic>
 #include <boost/asio/io_context.hpp>
 #include <chrono>
 #include <set>
@@ -30,11 +31,13 @@ public:
 
     static MetricsModel *&instance();
 
+    void registerArgs(d3156::Args::Builder &bldr) override;
+
     virtual ~MetricsModel();
 
 private:
     std::chrono::seconds statisticInterval      = std::chrono::seconds(5);
-    boost::chrono::milliseconds stopThreadTimeout = boost::chrono::seconds(200);
+    boost::chrono::milliseconds stopThreadTimeout = boost::chrono::milliseconds(200);
 
     boost::thread thread_; /// Метрики будут работать в отдельном потоке, чтобы не
                            /// терять данные при возможном зависании плагинов.
@@ -45,6 +48,8 @@ private:
     boost::asio::io_context io_;
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type> io_guard =
         boost::asio::make_work_guard(io_);
+
+    std::atomic<bool> stopToken = false;
 
     boost::asio::steady_timer upload_timer_ = boost::asio::steady_timer(io_);
     void run();
