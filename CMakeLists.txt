@@ -33,5 +33,6 @@ target_link_libraries(MetricsModel PRIVATE
 )
 
 set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
+set_target_properties(MetricsModel PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # ### BOOST ####
