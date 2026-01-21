@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(MetricsModel 
-VERSION 1.0.0
-LANGUAGES CXX
+  VERSION 1.0.0
+  LANGUAGES CXX
 )
 
 add_compile_definitions(METRICS_MODEL_VERSION="${PROJECT_VERSION}" )
