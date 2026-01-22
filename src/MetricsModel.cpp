@@ -82,6 +82,7 @@ void MetricsModel::timer_handler(const boost::system::error_code &ec)
 
 void MetricsModel::postInit()
 {
+    parseSettings();
     thread_ = boost::thread([this]() { this->run(); });
 }
 
@@ -105,7 +106,7 @@ void MetricsModel::parseSettings()
 
         ptree pt;
         pt.put("statisticInterval", statisticInterval.count());
-        pt.put("stopThreadTimeout", stopThreadTimeout);
+        pt.put("stopThreadTimeout", stopThreadTimeout.count());
 
         boost::property_tree::write_json(configPath, pt);
 
