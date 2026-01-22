@@ -13,7 +13,6 @@
 #define G_MetricsModel "\033[32m[MetricsModel]\033[0m "
 #define W_MetricsModel "[MetricsModel] "
 
-
 /*
 get in registerModels:
     MetricsModel::instance() = RegisterModel("MetricsModel", new MetricsModel(), MetricsModel);
@@ -22,6 +21,7 @@ get in registerModels:
 class MetricsModel final : public d3156::PluginCore::IModel
 {
     friend class Metrics::Metric;
+
 public:
     d3156::PluginCore::model_name name() override { return "MetricsModel"; }
 
@@ -31,7 +31,7 @@ public:
     void init() override;
 
     void postInit() override;
-    
+
     void registerArgs(d3156::Args::Builder &bldr) override;
 
     void registerUploader(Metrics::Uploader *uploader);
@@ -43,8 +43,12 @@ public:
 
     virtual ~MetricsModel();
 
+    void parseSettings();
+
 private:
-    std::chrono::seconds statisticInterval      = std::chrono::seconds(5);
+    std::string configPath       = "./configs/MetricsModel.json";
+
+    std::chrono::seconds statisticInterval        = std::chrono::seconds(5);
     boost::chrono::milliseconds stopThreadTimeout = boost::chrono::milliseconds(200);
 
     boost::thread thread_; /// Метрики будут работать в отдельном потоке, чтобы не
