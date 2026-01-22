@@ -28,7 +28,7 @@ target_include_directories(MetricsModel
 # ### BOOST ####
 set(Boost_USE_STATIC_LIBS ON)
 
-find_package(Boost 1.75 REQUIRED COMPONENTS system thread)
+find_package(Boost 1.8 REQUIRED COMPONENTS system thread)
 
 target_include_directories(MetricsModel PRIVATE
   ${Boost_INCLUDE_DIRS}

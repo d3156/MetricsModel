@@ -13,25 +13,33 @@
 #define G_MetricsModel "\033[32m[MetricsModel]\033[0m "
 #define W_MetricsModel "[MetricsModel] "
 
+
+/*
+get in registerModels:
+    MetricsModel::instance() = RegisterModel("MetricsModel", new MetricsModel(), MetricsModel);
+*/
+
 class MetricsModel final : public d3156::PluginCore::IModel
 {
     friend class Metrics::Metric;
 public:
     d3156::PluginCore::model_name name() override { return "MetricsModel"; }
 
+    /// Service interface
     int deleteOrder() override { return 10000; }
 
     void init() override;
 
     void postInit() override;
+    
+    void registerArgs(d3156::Args::Builder &bldr) override;
 
     void registerUploader(Metrics::Uploader *uploader);
 
     void unregisterUploader(Metrics::Uploader *uploader);
+    /// Service interface
 
     static MetricsModel *&instance();
-
-    void registerArgs(d3156::Args::Builder &bldr) override;
 
     virtual ~MetricsModel();
 
