@@ -52,6 +52,8 @@ MetricsModel::~MetricsModel()
             << "WARNING: Metrics upload thread cannot be stopped. Thread will be detached (potential resource leak)"
             << std::endl;
         thread_.detach();
+        std::lock_guard<std::mutex> lock(statistics_mutex_);
+        for(auto i : metrics_) i->parent = nullptr;
     } catch (std::exception &e) {
         std::cout << R_MetricsModel << "Exception throwed in exit: " << e.what() << std::endl;
     }

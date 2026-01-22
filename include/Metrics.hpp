@@ -4,14 +4,16 @@
 #include <string>
 #include <vector>
 
+class MetricsModel;
 namespace Metrics
 {
 
     using Tag = std::pair<std::string, std::string>;
-
+    
     class Metric
     {
-
+        friend class ::MetricsModel;
+        MetricsModel* parent = nullptr;
     public:
         Metric(const std::string &name, const std::vector<Tag> &tags = {});
         std::string toString() const;

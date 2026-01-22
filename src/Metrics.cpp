@@ -7,8 +7,9 @@ namespace Metrics
     Metric::Metric(const std::string &name_, const std::vector<Tag> &tags_) : tags(tags_), name(name_)
     {
         if (MetricsModel::instance()) {
-            std::lock_guard<std::mutex> lock(MetricsModel::instance()->statistics_mutex_);
-            MetricsModel::instance()->metrics_.insert(this);
+            parent = MetricsModel::instance();
+            std::lock_guard<std::mutex> lock(parent->statistics_mutex_);
+            parent->metrics_.insert(this);
         } else
             std::cout << R_MetricsModel << "MetricsModel::instance() is null! Can't register metrics " << name_ << "\n"
                       << R_MetricsModel
@@ -18,9 +19,9 @@ namespace Metrics
 
     Metric::~Metric()
     {
-        if (MetricsModel::instance()) {
-            std::lock_guard<std::mutex> lock(MetricsModel::instance()->statistics_mutex_);
-            MetricsModel::instance()->metrics_.erase(this);
+        if (parent) {
+            std::lock_guard<std::mutex> lock(parent->statistics_mutex_);
+            parent->metrics_.erase(this);
         }
     }
 
