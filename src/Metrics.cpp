@@ -55,6 +55,12 @@ namespace Metrics
         gauge = &parent_;
     }
 
+    Gauge &Gauge::operator=(size_t val)
+    {
+        value_ = val;
+        return *this;
+    }
+
     Gauge &Gauge::operator--(int)
     {
         if (value_) value_--;

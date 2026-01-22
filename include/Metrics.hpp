@@ -44,6 +44,7 @@ namespace Metrics
         Gauge(const std::string &name, const std::vector<Tag> &tags = {});
         ~Gauge();
 
+        Gauge &operator=(size_t val);
         Gauge &operator--(int);
         Gauge &operator-=(size_t val);
         Gauge &operator++(int);
