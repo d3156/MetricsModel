@@ -8,10 +8,6 @@
 #include <set>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
-#define Y_MetricsModel "\033[33m[MetricsModel]\033[0m "
-#define R_MetricsModel "\033[31m[MetricsModel]\033[0m "
-#define G_MetricsModel "\033[32m[MetricsModel]\033[0m "
-#define W_MetricsModel "[MetricsModel] "
 
 /*
 get in registerModels:

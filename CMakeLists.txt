@@ -5,6 +5,7 @@ project(MetricsModel
 )
 
 add_compile_definitions(METRICS_MODEL_VERSION="${PROJECT_VERSION}" )
+add_compile_definitions(LOG_NAME="MetricsModel")
 
 
 set(CMAKE_CXX_STANDARD 20)

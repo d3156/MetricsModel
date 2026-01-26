@@ -1,6 +1,7 @@
 #include "Metrics.hpp"
 #include "MetricsModel.hpp"
 #include "iostream"
+#include <PluginCore/Logger/Log.hpp>
 namespace Metrics
 {
 
@@ -10,11 +11,11 @@ namespace Metrics
             parent = MetricsModel::instance();
             std::lock_guard<std::mutex> lock(parent->statistics_mutex_);
             parent->metrics_.insert(this);
-        } else
-            std::cout << R_MetricsModel << "MetricsModel::instance() is null! Can't register metrics " << name_ << "\n"
-                      << R_MetricsModel
-                      << "All plugins, used MetricsModel must load it in register model and initialisate "
-                         "MetricsModel::instance()!!!";
+        } else {
+            R_LOG(1, "MetricsModel::instance() is null! Can't register metrics " << name_);
+            R_LOG(1, "All plugins, used MetricsModel must load it in register model and initialisate "
+                     "MetricsModel::instance()!!!");
+        }
     }
 
     Metric::~Metric()
@@ -91,9 +92,7 @@ namespace Metrics
 
     Gauge::~Gauge()
     {
-        if (value_) {
-            std::cout << "[Metrics::Gauge]" << name << " in destructor value was't zero. Metric = " << value_;
-        }
+        if (value_) R_LOG(1, "[Metrics::Gauge]" << name << " in destructor value was't zero. Metric = " << value_);
     }
 
     Counter &Counter::operator++(int)
