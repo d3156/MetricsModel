@@ -5,7 +5,6 @@ project(MetricsModel
 )
 
 add_compile_definitions(METRICS_MODEL_VERSION="${PROJECT_VERSION}" )
-add_compile_definitions(LOG_NAME="MetricsModel")
 
 
 set(CMAKE_CXX_STANDARD 20)
@@ -25,6 +24,8 @@ target_include_directories(MetricsModel
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+target_compile_definitions(MetricsModel PRIVATE $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="MetricsModel">)
 
 # ### BOOST ####
 set(Boost_USE_STATIC_LIBS ON)
