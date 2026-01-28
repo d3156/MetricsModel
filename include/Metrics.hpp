@@ -21,6 +21,7 @@ namespace Metrics
         size_t value_ = 0;
         std::vector<Tag> tags;
         std::string name;
+        bool imported = false; // Для метрик, импортированных из другого хранилища метрик
     };
 
     class Bool : protected Metric
