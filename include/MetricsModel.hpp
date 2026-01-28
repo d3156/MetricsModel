@@ -41,8 +41,10 @@ public:
 
     void parseSettings();
 
+    boost::asio::io_context &getIO();
+
 private:
-    std::string configPath       = "./configs/MetricsModel.json";
+    std::string configPath = "./configs/MetricsModel.json";
 
     std::chrono::seconds statisticInterval        = std::chrono::seconds(5);
     boost::chrono::milliseconds stopThreadTimeout = boost::chrono::milliseconds(200);
