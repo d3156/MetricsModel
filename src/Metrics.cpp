@@ -11,6 +11,10 @@ namespace Metrics
             parent = MetricsModel::instance();
             std::lock_guard<std::mutex> lock(parent->statistics_mutex_);
             parent->metrics_.insert(this);
+            for (int i = 0; i < tags.size(); i++) {
+                metrics_key += tags[i].first + "=" + tags[i].second;
+                if (i != tags.size() - 1) metrics_key += ", ";
+            }
         } else {
             R_LOG(1, "MetricsModel::instance() is null! Can't register metrics " << name_);
             R_LOG(1, "All plugins, used MetricsModel must load it in register model and initialisate "
@@ -26,7 +30,7 @@ namespace Metrics
         }
     }
 
-    std::string Metric::toString() const { return "\t" + name + "\t: " + std::to_string(value_) + "\n"; }
+    std::string Metric::toString() const { return metrics_key + ": " + std::to_string(value_); }
 
     Bool::Bool(const std::string &name, const std::vector<Tag> &tags) : Metric(name, tags) {}
 

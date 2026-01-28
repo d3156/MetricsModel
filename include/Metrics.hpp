@@ -14,6 +14,7 @@ namespace Metrics
     {
         friend class ::MetricsModel;
         MetricsModel* parent = nullptr;
+        std::string metrics_key;
     public:
         Metric(const std::string &name, const std::vector<Tag> &tags = {});
         std::string toString() const;
