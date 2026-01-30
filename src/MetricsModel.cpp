@@ -119,4 +119,5 @@ void MetricsModel::parseSettings()
         R_LOG(1, "error on load config " << configPath << " " << e.what());
     }
 }
+
 boost::asio::io_context &MetricsModel::getIO() { return io_; }

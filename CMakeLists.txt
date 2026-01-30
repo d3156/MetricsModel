@@ -5,7 +5,7 @@ project(MetricsModel
 )
 
 add_compile_definitions(METRICS_MODEL_VERSION="${PROJECT_VERSION}" )
-
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../libs/)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,15 +14,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 file(GLOB_RECURSE SRC_FILES
   CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
 )
 
 add_library(MetricsModel STATIC ${SRC_FILES})
 
 target_include_directories(MetricsModel
   PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_compile_definitions(MetricsModel PRIVATE $<$<COMPILE_LANGUAGE:CXX>:LOG_NAME="MetricsModel">)
