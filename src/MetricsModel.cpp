@@ -1,4 +1,5 @@
 #include "MetricsModel.hpp"
+#include "NotifierSystem.hpp"
 #include <PluginCore/Logger/Log.hpp>
 #include <exception>
 #include <unistd.h>
@@ -68,6 +69,7 @@ void MetricsModel::timer_handler(const boost::system::error_code &ec)
         std::lock_guard<std::mutex> lock(statistics_mutex_);
         for (auto &uploader : uploaders_)
             if (uploader) uploader->upload(metrics_);
+        notifier_manager.upload(metrics_);
     } catch (std::exception &e) {
         R_LOG(1, "Exception throwed in timer_handler: " << e.what());
     }
@@ -96,14 +98,14 @@ namespace fs = std::filesystem;
 void MetricsModel::parseSettings()
 {
     if (!fs::exists(configPath)) {
-        Y_LOG(1, " Config file " << configPath << " not found. Creating default config...");
+        Y_LOG(1, "Config file " << configPath << " not found. Creating default config...");
 
         fs::create_directories(fs::path(configPath).parent_path());
 
         ptree pt;
         pt.put("statisticInterval", statisticInterval.count());
         pt.put("stopThreadTimeout", stopThreadTimeout.count());
-
+        pt.add_child("notifiers", NotifierSystem::NotifyManager::getDefault());
         boost::property_tree::write_json(configPath, pt);
 
         G_LOG(1, " Default config created at " << configPath);
@@ -115,9 +117,26 @@ void MetricsModel::parseSettings()
 
         statisticInterval = std::chrono::seconds(pt.get<std::uint32_t>("statisticInterval"));
         stopThreadTimeout = boost::chrono::milliseconds(pt.get<std::uint32_t>("stopThreadTimeout"));
+        if (!notifier_manager.parseSettings(pt.get_child("notifiers", ptree{}))) {
+            R_LOG(1, "Error on load config " << configPath);
+            return;
+        };
+        G_LOG(1, "Config loaded from " << configPath);
     } catch (std::exception e) {
-        R_LOG(1, "error on load config " << configPath << " " << e.what());
+        R_LOG(1, "Error on load config " << configPath << " " << e.what());
     }
 }
 
 boost::asio::io_context &MetricsModel::getIO() { return io_; }
+
+void MetricsModel::registerAlertProvider(NotifierSystem::NotifierProvider *alert_provider)
+{
+    std::lock_guard<std::mutex> lock(statistics_mutex_);
+    notifier_manager.alert_providers.insert(alert_provider);
+}
+
+void MetricsModel::unregisterAlertProvider(NotifierSystem::NotifierProvider *alert_provider)
+{
+    std::lock_guard<std::mutex> lock(statistics_mutex_);
+    notifier_manager.alert_providers.erase(alert_provider);
+}

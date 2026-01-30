@@ -1,0 +1,41 @@
+@startuml
+' Цвета
+!define BLUE #ADD8E6
+!define LIGHT_BLUE #B0E0E6
+!define GREEN #90EE90
+!define ORANGE #FFA500
+!define PURPLE #DDA0DD
+
+component "Prometheus_1" GREEN
+component "Prometheus_2" GREEN
+component "Grafana" ORANGE
+
+component PluginLoader{
+    ' Компоненты внутри PluginLoader
+    component "ModelStorage" BLUE{
+    component "MetricsModel" LIGHT_BLUE
+    component "PingNodeModel" LIGHT_BLUE
+    }
+    component "PrometheusExporterPlugin" PURPLE
+    component "PrometheusImporterPlugin" PURPLE
+    component "PingNodePlugin" PURPLE
+    component "TelegramNotifierPlugin" PURPLE
+}
+
+component "TelegramApi" GREEN
+
+PrometheusExporterPlugin --> Prometheus_1 : exports metrics
+PrometheusImporterPlugin <-- Prometheus_2 : imports metrics
+Prometheus_1 --> Grafana : provides metrics
+' Взаимосвязи
+PrometheusExporterPlugin <-- MetricsModel : Upload metrics
+MetricsModel <-- PrometheusImporterPlugin : Download metrics
+PingNodePlugin --> PingNodeModel : Export interface for plugins
+PingNodePlugin --> MetricsModel : metrics
+
+MetricsModel --> TelegramNotifierPlugin  : Provide Alert
+
+TelegramNotifierPlugin --> TelegramApi : Send Alert
+
+
+@enduml

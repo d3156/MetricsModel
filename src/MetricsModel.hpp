@@ -1,6 +1,7 @@
 #pragma once
 #include "MetricUploader.hpp"
 #include "Metrics.hpp"
+#include "NotifierSystem.hpp"
 #include <PluginCore/IModel.hpp>
 #include <atomic>
 #include <boost/asio/io_context.hpp>
@@ -29,21 +30,25 @@ public:
     void postInit() override;
 
     void registerArgs(d3156::Args::Builder &bldr) override;
+    /// Service interface
 
     void registerUploader(Metrics::Uploader *uploader);
 
     void unregisterUploader(Metrics::Uploader *uploader);
-    /// Service interface
+
+    void registerAlertProvider(NotifierSystem::NotifierProvider *alert_provider);
+
+    void unregisterAlertProvider(NotifierSystem::NotifierProvider *alert_provider);
 
     static MetricsModel *&instance();
 
     virtual ~MetricsModel();
 
-    void parseSettings();
-
     boost::asio::io_context &getIO();
 
 private:
+    void parseSettings();
+
     std::string configPath = "./configs/MetricsModel.json";
 
     std::chrono::seconds statisticInterval        = std::chrono::seconds(5);
@@ -64,4 +69,6 @@ private:
     boost::asio::steady_timer upload_timer_ = boost::asio::steady_timer(io_);
     void run();
     void timer_handler(const boost::system::error_code &ec);
+
+    NotifierSystem::NotifyManager notifier_manager;
 };
