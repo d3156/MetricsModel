@@ -3,7 +3,7 @@
 #include <boost/property_tree/ptree_fwd.hpp>
 #include <map>
 #include <set>
-#include <vector>
+#include <chrono>
 
 namespace NotifierSystem
 {
@@ -15,7 +15,35 @@ namespace NotifierSystem
         virtual ~NotifierProvider()             = default;
     };
 
-    struct Notify;
+    enum class ConditionType { Greater, Less, GreaterEqual, LessEqual, Equal, Range, Error };
+
+    struct Condition {
+        std::string text = "";
+        ConditionType type;
+        size_t value;     // для > < >= <= =
+        size_t min_value; // для Range
+        size_t max_value; // для Range
+
+        bool delta_mode  = false;
+        size_t lastValue = 0;
+        std::string tostring();
+    };
+
+    struct Notify {
+        /// From config
+        std::string metric = "";
+        size_t alert_count = 0; /// Количество повторов для срабатывания
+        Condition condition;
+        std::set<std::string> tags = {}; // optional
+
+        /// Runtime
+        std::string alertStartMessage   = "Alert! {metric}:{value} {tags}";
+        std::string alertStoppedMessage = "Alert stopped! {metric}:{value} {tags}";
+
+        std::chrono::time_point<std::chrono::steady_clock> start_;
+        std::string formatAlertMessage(const std::string &tmpl, Metrics::Metric *metric);
+    };
+    
     class NotifyManager
     {
         friend class ::MetricsModel;
