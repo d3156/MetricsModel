@@ -31,7 +31,7 @@ void MetricsModel::run()
 
 void MetricsModel::registerArgs(d3156::Args::Builder &bldr)
 {
-    bldr.setVersion("MetricsModel " + std::string(METRICS_MODEL_VERSION))
+    bldr.setVersion("MetricsModel " + std::string(MetricsModel_VERSION))
         .addOption(configPath, "MetricsModelPath", "path to config for MetricsModel.json");
 }
 
