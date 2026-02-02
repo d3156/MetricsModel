@@ -2,6 +2,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <PluginCore/Logger/Log.hpp>
 #include <string>
+#include <iomanip>
 
 using boost::property_tree::ptree;
 namespace NotifierSystem
