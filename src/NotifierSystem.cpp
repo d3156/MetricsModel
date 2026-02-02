@@ -144,6 +144,7 @@ namespace NotifierSystem
         notifier.put("metric", "");
         notifier.put("alert_count", 1);
         notifier.put("condition", "");
+        notifier.put("delta_mode", false);
         notifier.add_child("tags", tags);
         notifier.put("alertStartMessage", "Alert! {metric}:{value} {tags}");
         notifier.put("alertStoppedMessage", "Alert stopped! {metric}:{value} {tags}");
