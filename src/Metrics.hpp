@@ -9,12 +9,13 @@ namespace Metrics
 {
 
     using Tag = std::pair<std::string, std::string>;
-    
+
     class Metric
     {
         friend class ::MetricsModel;
-        MetricsModel* parent = nullptr;
+        MetricsModel *parent = nullptr;
         std::string metrics_key;
+
     public:
         Metric(const std::string &name, const std::vector<Tag> &tags = {});
         std::string toString() const;

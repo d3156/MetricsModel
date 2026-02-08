@@ -12,7 +12,7 @@
 
 /*
 get in registerModels:
-    MetricsModel::instance() = RegisterModel("MetricsModel", new MetricsModel(), MetricsModel);
+    MetricsModel::instance() = models.registerModel<MetricsModel>();
 */
 
 class MetricsModel final : public d3156::PluginCore::IModel
@@ -20,15 +20,11 @@ class MetricsModel final : public d3156::PluginCore::IModel
     friend class Metrics::Metric;
 
 public:
-    d3156::PluginCore::model_name name() override { return "MetricsModel"; }
-
     /// Service interface
+    static std::string name();
     int deleteOrder() override { return 10000; }
-
     void init() override;
-
     void postInit() override;
-
     void registerArgs(d3156::Args::Builder &bldr) override;
     /// Service interface
 
@@ -49,7 +45,7 @@ public:
 private:
     void parseSettings();
 
-    std::string configPath = "./configs/MetricsModel.json";
+    std::string configPath = "./configs/MetricsModel.jsonhfgff";
 
     std::chrono::seconds statisticInterval        = std::chrono::seconds(5);
     boost::chrono::milliseconds stopThreadTimeout = boost::chrono::milliseconds(200);

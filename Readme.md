@@ -21,7 +21,7 @@ Due to static linking encapsulating symbols, each plugin must initialize the sha
 
 ```cpp
     void registerModels(d3156::PluginCore::ModelsStorage& models) override {
-        MetricsModel::instance() = RegisterModel("MetricsModel",new MetricsModel(), MetricsModel);
+        MetricsModel::instance() = models.registerModel<MetricsModel>();
         
     }
 ```

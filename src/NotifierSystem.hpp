@@ -43,7 +43,7 @@ namespace NotifierSystem
         std::chrono::time_point<std::chrono::steady_clock> start_;
         std::string formatAlertMessage(const std::string &tmpl, Metrics::Metric *metric);
     };
-    
+
     class NotifyManager
     {
         friend class ::MetricsModel;

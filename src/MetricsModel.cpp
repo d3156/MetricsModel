@@ -31,8 +31,7 @@ void MetricsModel::run()
 
 void MetricsModel::registerArgs(d3156::Args::Builder &bldr)
 {
-    bldr.setVersion("MetricsModel " + std::string(MetricsModel_VERSION))
-        .addOption(configPath, "MetricsModelPath", "path to config for MetricsModel.json");
+    bldr.setVersion(FULL_NAME).addOption(configPath, "MetricsModelPath", "path to config for MetricsModel.json");
 }
 
 MetricsModel::~MetricsModel()
@@ -93,6 +92,7 @@ MetricsModel *&MetricsModel::instance()
 }
 
 using boost::property_tree::ptree;
+
 namespace fs = std::filesystem;
 
 void MetricsModel::parseSettings()
@@ -140,3 +140,5 @@ void MetricsModel::unregisterAlertProvider(NotifierSystem::NotifierProvider *ale
     std::lock_guard<std::mutex> lock(statistics_mutex_);
     notifier_manager.alert_providers.erase(alert_provider);
 }
+
+std::string MetricsModel::name() { return FULL_NAME; }
