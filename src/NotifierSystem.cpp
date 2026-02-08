@@ -1,6 +1,9 @@
 #include "NotifierSystem.hpp"
+#include "Metrics.hpp"
 #include <boost/property_tree/ptree.hpp>
 #include <PluginCore/Logger/Log.hpp>
+#include <chrono>
+#include <memory>
 #include <string>
 #include <iomanip>
 
@@ -109,27 +112,37 @@ namespace NotifierSystem
         if (s.starts_with("=")) return {.text = s, .type = ConditionType::Equal, .value = std::stoul(s.substr(1))};
         return {.type = ConditionType::Error};
     }
+
     bool NotifyManager::parseSettings(const ptree &ntfs)
     {
         try {
             for (auto &n : ntfs) {
-                Notify notify;
-                notify.metric              = n.second.get<std::string>("metric", "");
-                notify.alertStartMessage   = n.second.get<std::string>("alertStartMessage", " ");
-                notify.alertStoppedMessage = n.second.get<std::string>("alertStoppedMessage", "");
-
-                if (notify.metric.empty()) continue;
-                notify.condition = parse_condition(n.second.get<std::string>("condition", ""));
-                LOG(5, notify.condition.tostring());
-                if (notify.condition.type == ConditionType::Error) {
+                auto name = n.second.get<std::string>("metric", "");
+                if (name.empty()) continue;
+                auto condition = parse_condition(n.second.get<std::string>("condition", ""));
+                LOG(5, condition.tostring());
+                if (condition.type == ConditionType::Error) {
                     R_LOG(1, " invalid condition in notifier for metric " << n.second.get<std::string>("metric", ""));
                     continue;
                 }
-                notify.condition.delta_mode = n.second.get<bool>("delta_mode", false);
-                notify.alert_count          = std::max<size_t>(1, n.second.get<size_t>("alert_count", 1));
-                for (auto &t : n.second.get_child("tags", ptree{}))
-                    notify.tags.insert(t.second.get_value<std::string>());
-                notifiers[notify.metric] = std::move(notify);
+                condition.delta_mode    = n.second.get<bool>("delta_mode", false);
+                std::string tags_joined = "";
+                std::set<std::string> tags;
+                for (auto &t : n.second.get_child("tags", ptree{})) {
+                    auto tag = t.second.get_value<std::string>();
+                    if (tags_joined.size()) tags_joined += ", ";
+                    tags_joined += tag;
+                    tags.insert(tag);
+                }
+                notifiers[name] = Notify{
+                    .metric                = name,
+                    .alert_count           = std::max<size_t>(1, n.second.get<size_t>("alert_count", 1)),
+                    .condition             = condition,
+                    .tags                  = tags,
+                    .alertStartMessage     = n.second.get<std::string>("alertStartMessage", " "),
+                    .alertStoppedMessage   = n.second.get<std::string>("alertStoppedMessage", ""),
+                    .alert_count_in_period = std::make_unique<Metrics::Counter>(
+                        "Notify_count_in_period", std::vector<Metrics::Tag>{{"metric", name}, {"tags", tags_joined}})};
             }
         } catch (const std::exception &e) {
             R_LOG(1, "NotifyManager error on load config " << e.what());
@@ -154,7 +167,7 @@ namespace NotifierSystem
 
     void NotifyManager::upload(std::set<Metrics::Metric *> &statistics)
     {
-        if (!alert_providers.empty()) return;
+        if (alert_providers.empty()) return;
         std::vector<std::string> alerts;
         if (alerts_count.size() == 0)
             for (auto metric : statistics) alerts_count[metric] = 0;
@@ -168,7 +181,7 @@ namespace NotifierSystem
                 })) {
                 continue;
             }
-            size_t &current_count = alerts_count[metric];
+            auto &current_count = alerts_count[metric];
 
             if (check_condition(notifier->second.condition, metric->value_)) {
                 current_count++;
@@ -179,6 +192,7 @@ namespace NotifierSystem
                     alerts.emplace_back(
                         notifier->second.formatAlertMessage(notifier->second.alertStartMessage, metric));
                     notifier->second.start_ = std::chrono::steady_clock::now();
+                    (*notifier->second.alert_count_in_period)++;
                 }
             } else {
                 if (current_count >= notifier->second.alert_count) {
@@ -190,5 +204,51 @@ namespace NotifierSystem
         }
         for (auto &alert : alerts)
             for (auto &provider : alert_providers) provider->alert(alert);
+        reporter();
     }
+
+    boost::property_tree::ptree NotifyManager::Report::getDefault()
+    {
+        ptree report;
+        report.put("periodHours", 12);
+        report.put("headText", "📝 Report for period {period}h :");
+        report.put("conditionText", "⚠️ Count conditionls alert:");
+        report.put("alertText", "🚨 Count notifies sended:");
+        report.put("needSend", false);
+        return report;
+    }
+
+    bool NotifyManager::Report::parseSettings(const boost::property_tree::ptree &report)
+    {
+        periodHours   = report.get("periodHours", periodHours);
+        headText      = report.get("headText", headText);
+        conditionText = report.get("conditionText", conditionText);
+        alertText     = report.get("alertText", alertText);
+        needSend      = report.get("needSend", needSend);
+        size_t pos    = headText.find("{period}");
+        if (pos != std::string::npos) headText.replace(pos, 8, std::to_string(periodHours));
+        return true;
+    }
+
+    void NotifyManager::reporter()
+    {
+        if (!report.needSend) return;
+        G_LOG(0, "Report check");
+        if (std::chrono::steady_clock::now() - last_sended_report < std::chrono::hours(report.periodHours)) return;
+        last_sended_report     = std::chrono::steady_clock::now();
+        std::string conditions = "", alerts = "";
+        for (auto &condition : notifiers) {
+            conditions += "\n        " + std::to_string(*condition.second.alert_count_in_period) + " : " +
+                          condition.second.metric + " " + condition.second.condition.tostring();
+            condition.second.alert_count_in_period->exchange();
+        }
+        for (auto &alert : alerts_count)
+            if (alert.second)
+                alerts += "\n        " + std::to_string(alert.second) + " : " + alert.first->toString(false);
+        auto report_text =
+            report.headText + "\n" + report.alertText+ conditions + "\n" + report.conditionText + alerts;
+        for (auto &provider : alert_providers) provider->alert(report_text);
+        G_LOG(50, "Report:" << report_text);
+    }
+
 }

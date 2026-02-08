@@ -65,9 +65,11 @@ void MetricsModel::timer_handler(const boost::system::error_code &ec)
     if (ec && ec != boost::asio::error::operation_aborted) R_LOG(1, ec.message());
     if (ec || stopToken) return;
     try {
-        std::lock_guard<std::mutex> lock(statistics_mutex_);
-        for (auto &uploader : uploaders_)
-            if (uploader) uploader->upload(metrics_);
+        {
+            std::lock_guard<std::mutex> lock(statistics_mutex_);
+            for (auto &uploader : uploaders_)
+                if (uploader) uploader->upload(metrics_);
+        }
         notifier_manager.upload(metrics_);
     } catch (std::exception &e) {
         R_LOG(1, "Exception throwed in timer_handler: " << e.what());
@@ -106,6 +108,7 @@ void MetricsModel::parseSettings()
         pt.put("statisticInterval", statisticInterval.count());
         pt.put("stopThreadTimeout", stopThreadTimeout.count());
         pt.add_child("notifiers", NotifierSystem::NotifyManager::getDefault());
+        pt.add_child("report", NotifierSystem::NotifyManager::Report::getDefault());
         boost::property_tree::write_json(configPath, pt);
 
         G_LOG(1, " Default config created at " << configPath);
@@ -118,7 +121,11 @@ void MetricsModel::parseSettings()
         statisticInterval = std::chrono::seconds(pt.get<std::uint32_t>("statisticInterval"));
         stopThreadTimeout = boost::chrono::milliseconds(pt.get<std::uint32_t>("stopThreadTimeout"));
         if (!notifier_manager.parseSettings(pt.get_child("notifiers", ptree{}))) {
-            R_LOG(1, "Error on load config " << configPath);
+            R_LOG(1, "Error on load notifiers from config " << configPath);
+            return;
+        };
+        if (!notifier_manager.report.parseSettings(pt.get_child("report", ptree{}))) {
+            R_LOG(1, "Error on load report from config " << configPath);
             return;
         };
         G_LOG(1, "Config loaded from " << configPath);

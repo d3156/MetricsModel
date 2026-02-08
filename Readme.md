@@ -72,6 +72,13 @@ Config `./configs/MetricsModel.json`
 {
   "statisticInterval": 5,
   "stopThreadTimeout": 200,
+  "report":{
+    "periodHours": 12,
+    "haedText": "📝 Отчет за преиод {period}ч.:",
+    "conditionText": "⚠️ Количество срабатываний условий:",
+    "alertText": "🚨 Количество срабатываний оповещений:",
+    "needSend": true
+  },
   "notifiers": [
     {
       "metric": "PingNodeLatency_gauge",
@@ -89,7 +96,7 @@ Config `./configs/MetricsModel.json`
       "alertStartMessage": "⚠️ Внимание! Сервер [{tags}] недоступен!",
       "alertStoppedMessage": "✅ Сервер снова [{tags}] доступен!"
     }
-  ]
+  ],
 }
 ```
 ## How It Works

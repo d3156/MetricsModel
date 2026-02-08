@@ -30,7 +30,10 @@ namespace Metrics
         }
     }
 
-    std::string Metric::toString() const { return metrics_key + ": " + std::to_string(value_); }
+    std::string Metric::toString(bool with_value) const
+    {
+        return with_value ? metrics_key + ": " + std::to_string(value_) : metrics_key;
+    }
 
     Bool::Bool(const std::string &name, const std::vector<Tag> &tags) : Metric(name, tags) {}
 
@@ -143,4 +146,20 @@ namespace Metrics
         return *this;
     }
 
+    Bool::operator bool() const { return value_; }
+
+    Gauge::operator size_t() const { return value_; }
+
+    Counter::operator size_t() const { return value_; }
+
+    Counter &CounterGauge::getCounter() { return counter_; }
+
+    Gauge &CounterGauge::getGauge() { return gauge_; }
+
+    size_t Counter::exchange(size_t val)
+    {
+        auto tmp = value_;
+        value_   = val;
+        return tmp;
+    }
 } // namespace Metrics

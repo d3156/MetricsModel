@@ -1,6 +1,7 @@
 #pragma once
 #include "Metrics.hpp"
 #include <boost/property_tree/ptree_fwd.hpp>
+#include <cstddef>
 #include <map>
 #include <set>
 #include <chrono>
@@ -42,6 +43,7 @@ namespace NotifierSystem
 
         std::chrono::time_point<std::chrono::steady_clock> start_;
         std::string formatAlertMessage(const std::string &tmpl, Metrics::Metric *metric);
+        std::unique_ptr<Metrics::Counter> alert_count_in_period;
     };
 
     class NotifyManager
@@ -54,7 +56,17 @@ namespace NotifierSystem
         static boost::property_tree::ptree getDefault();
         bool parseSettings(const boost::property_tree::ptree &notifiers);
         void upload(std::set<Metrics::Metric *> &statistics);
+        void reporter();        
+        struct Report {
+            size_t periodHours        = 12;
+            std::string headText      = "📝 Отчет за преиод {period}ч.:";
+            std::string conditionText = "⚠️ Количество срабатываний условий:";
+            std::string alertText     = "🚨 Количество срабатываний оповещений:";
+            bool needSend             = true;
+            bool parseSettings(const boost::property_tree::ptree &report);
+            static boost::property_tree::ptree getDefault();
+        } report;
 
-    public:
+        std::chrono::time_point<std::chrono::steady_clock> last_sended_report = std::chrono::steady_clock::now();
     };
 }

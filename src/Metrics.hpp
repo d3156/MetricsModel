@@ -2,6 +2,7 @@
 #include <atomic>
 #include <cstddef>
 #include <string>
+#include <termios.h>
 #include <vector>
 
 class MetricsModel;
@@ -18,7 +19,7 @@ namespace Metrics
 
     public:
         Metric(const std::string &name, const std::vector<Tag> &tags = {});
-        std::string toString() const;
+        std::string toString(bool with_value = true) const;
         virtual ~Metric();
         size_t value_ = 0;
         std::vector<Tag> tags;
@@ -32,6 +33,7 @@ namespace Metrics
         Bool(const std::string &name, const std::vector<Tag> &tags = {});
 
         Bool &operator=(bool val);
+        operator bool() const;
     };
 
     class Counter : protected Metric
@@ -41,6 +43,8 @@ namespace Metrics
 
         Counter &operator++(int);
         Counter &operator+=(size_t val);
+        size_t exchange(size_t val = 0);
+        operator size_t() const;
     };
 
     class Gauge : protected Metric
@@ -54,6 +58,7 @@ namespace Metrics
         Gauge &operator-=(size_t val);
         Gauge &operator++(int);
         Gauge &operator+=(size_t val);
+        operator size_t() const;
 
     protected:
         friend class Guard;
@@ -68,6 +73,9 @@ namespace Metrics
         CounterGauge &operator-=(size_t val);
         CounterGauge &operator++(int);
         CounterGauge &operator+=(size_t val);
+
+        Counter &getCounter();
+        Gauge &getGauge();
 
     protected:
         friend class MetricGuard;
