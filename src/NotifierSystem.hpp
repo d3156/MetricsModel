@@ -65,8 +65,7 @@ namespace NotifierSystem
             bool needSend             = true;
             bool parseSettings(const boost::property_tree::ptree &report);
             static boost::property_tree::ptree getDefault();
+            std::chrono::time_point<std::chrono::steady_clock> last_sended_report;
         } report;
-
-        std::chrono::time_point<std::chrono::steady_clock> last_sended_report = std::chrono::steady_clock::now() + std::chrono::hours(report.periodHours);
     };
 }

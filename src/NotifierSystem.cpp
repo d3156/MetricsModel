@@ -231,6 +231,7 @@ namespace NotifierSystem
         needSend      = report.get("needSend", needSend);
         size_t pos    = headText.find("{period}");
         if (pos != std::string::npos) headText.replace(pos, 8, std::to_string(periodHours));
+        last_sended_report = std::chrono::steady_clock::now() - std::chrono::hours(periodHours);
         return true;
     }
 
@@ -238,8 +239,9 @@ namespace NotifierSystem
     {
         if (!report.needSend) return;
         G_LOG(50, "Report check");
-        if (std::chrono::steady_clock::now() - last_sended_report < std::chrono::hours(report.periodHours)) return;
-        last_sended_report     = std::chrono::steady_clock::now();
+        if (std::chrono::steady_clock::now() - report.last_sended_report < std::chrono::hours(report.periodHours))
+            return;
+        report.last_sended_report = std::chrono::steady_clock::now();
         std::string conditions = "", alerts = "";
         for (auto &condition : notifiers) {
             conditions += "\n        " + std::to_string(*condition.second.alert_count_in_period) + " : " +
