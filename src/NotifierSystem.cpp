@@ -187,8 +187,10 @@ namespace NotifierSystem
                 current_count++;
 
                 Y_LOG(100, "condition checked: " << notifier->second.condition.tostring() << "alert count "
-                                                 << current_count);
+                                                 << current_count << " for metric: " << metric->toString(false));
                 if (current_count == notifier->second.alert_count) {
+                    Y_LOG(100, "alert start : " << notifier->second.condition.tostring()
+                                                << " for metric: " << metric->toString(false));
                     alerts.emplace_back(
                         notifier->second.formatAlertMessage(notifier->second.alertStartMessage, metric));
                     notifier->second.start_ = std::chrono::steady_clock::now();
@@ -196,6 +198,8 @@ namespace NotifierSystem
                 }
             } else {
                 if (current_count >= notifier->second.alert_count) {
+                    Y_LOG(100, "alert stop : " << notifier->second.condition.tostring()
+                                               << " for metric: " << metric->toString(false));
                     alerts.emplace_back(
                         notifier->second.formatAlertMessage(notifier->second.alertStoppedMessage, metric));
                 }
@@ -233,7 +237,7 @@ namespace NotifierSystem
     void NotifyManager::reporter()
     {
         if (!report.needSend) return;
-        G_LOG(0, "Report check");
+        G_LOG(50, "Report check");
         if (std::chrono::steady_clock::now() - last_sended_report < std::chrono::hours(report.periodHours)) return;
         last_sended_report     = std::chrono::steady_clock::now();
         std::string conditions = "", alerts = "";
@@ -246,7 +250,7 @@ namespace NotifierSystem
             if (alert.second)
                 alerts += "\n        " + std::to_string(alert.second) + " : " + alert.first->toString(false);
         auto report_text =
-            report.headText + "\n" + report.alertText+ conditions + "\n" + report.conditionText + alerts;
+            report.headText + "\n" + report.alertText + conditions + "\n" + report.conditionText + alerts;
         for (auto &provider : alert_providers) provider->alert(report_text);
         G_LOG(50, "Report:" << report_text);
     }

@@ -15,6 +15,7 @@ namespace Metrics
                 metrics_key += tags[i].first + "=" + tags[i].second;
                 if (i != tags.size() - 1) metrics_key += ", ";
             }
+            G_LOG(1, "Created metric :" << metrics_key);
         } else {
             R_LOG(1, "MetricsModel::instance() is null! Can't register metrics " << name_);
             R_LOG(1, "All plugins, used MetricsModel must load it in register model and initialisate "

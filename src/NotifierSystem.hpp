@@ -67,6 +67,6 @@ namespace NotifierSystem
             static boost::property_tree::ptree getDefault();
         } report;
 
-        std::chrono::time_point<std::chrono::steady_clock> last_sended_report = std::chrono::steady_clock::now();
+        std::chrono::time_point<std::chrono::steady_clock> last_sended_report = std::chrono::steady_clock::now() + std::chrono::hours(report.periodHours);
     };
 }
