@@ -11,6 +11,8 @@ namespace Metrics
             parent = MetricsModel::instance();
             std::lock_guard<std::mutex> lock(parent->statistics_mutex_);
             parent->metrics_.insert(this);
+            metrics_key = name;
+            if (tags.size()) metrics_key += " tags=";
             for (int i = 0; i < tags.size(); i++) {
                 metrics_key += tags[i].first + "=" + tags[i].second;
                 if (i != tags.size() - 1) metrics_key += ", ";
