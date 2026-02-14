@@ -81,11 +81,11 @@ namespace NotifierSystem
             }
             msg.replace(pos, 6, tags);
         }
-        pos = msg.find("{tags:");
+        pos = msg.find("{tag:");
         if (pos != std::string::npos) {
             size_t pos_end = msg.find("}", pos);
             if (pos_end == std::string::npos) return msg;
-            std::string key = msg.substr(pos + 6, pos_end - (pos + 6));
+            std::string key = msg.substr(pos + 5, pos_end - (pos + 5));
             auto res        = std::ranges::find_if(metric->tags, [=](Metrics::Tag &val) { return val.first == key; });
             if (res != metric->tags.end()) msg.replace(pos, pos_end - pos, res->second);
         }
