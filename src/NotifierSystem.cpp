@@ -170,7 +170,7 @@ namespace NotifierSystem
         if (alert_providers.empty()) return;
         std::vector<std::string> alerts;
         if (alerts_count.size() == 0)
-            for (auto metric : statistics) alerts_count[metric] = 0;
+            for (auto metric : statistics) alerts_count[metric] = {0, 0};
         for (auto metric : statistics) {
             auto notifier = notifiers.find(metric->name);
             if (notifier == notifiers.end()) continue;
@@ -181,10 +181,11 @@ namespace NotifierSystem
                 })) {
                 continue;
             }
-            auto &current_count = alerts_count[metric];
+            auto &[current_count, current_total_count] = alerts_count[metric];
 
             if (check_condition(notifier->second.condition, metric->value_)) {
                 current_count++;
+                current_total_count++;
 
                 Y_LOG(100, "condition checked: " << notifier->second.condition.tostring() << "alert count "
                                                  << current_count << " for metric: " << metric->toString(false));
@@ -243,16 +244,18 @@ namespace NotifierSystem
             return;
         report.last_sended_report = std::chrono::steady_clock::now();
         std::string conditions = "", alerts = "";
-        for (auto &condition : notifiers) {
-            conditions += "\n        " + std::to_string(*condition.second.alert_count_in_period) + " : " +
-                          condition.second.metric + " " + condition.second.condition.tostring();
-            condition.second.alert_count_in_period->exchange();
+        for (auto &alert : notifiers) {
+            alerts += "\n        " + std::to_string(*alert.second.alert_count_in_period) + " : " + alert.second.metric +
+                      " " + alert.second.condition.tostring();
+            alert.second.alert_count_in_period->exchange();
         }
-        for (auto &alert : alerts_count)
-            if (alert.second)
-                alerts += "\n        " + std::to_string(alert.second) + " : " + alert.first->toString(false);
+        for (auto &[metric, condition_count] : alerts_count)
+            if (condition_count.second) {
+                conditions += "\n        " + std::to_string(condition_count.second) + " : " + metric->toString(false);
+                condition_count.second = 0;
+            }
         auto report_text =
-            report.headText + "\n" + report.alertText + conditions + "\n" + report.conditionText + alerts;
+            report.headText + "\n" + report.alertText + alerts + "\n" + report.conditionText + conditions;
         for (auto &provider : alert_providers) provider->alert(report_text);
         G_LOG(50, "Report:" << report_text);
     }

@@ -49,7 +49,7 @@ namespace NotifierSystem
     class NotifyManager
     {
         friend class ::MetricsModel;
-        std::map<Metrics::Metric *, size_t> alerts_count;
+        std::map<Metrics::Metric *, std::pair<size_t, size_t>> alerts_count;
         std::unordered_map<std::string, Notify> notifiers;
         std::set<NotifierProvider *> alert_providers;
         NotifyManager() {}
