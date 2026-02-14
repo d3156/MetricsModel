@@ -94,7 +94,7 @@ Config `./configs/MetricsModel.json`
   "stopThreadTimeout": 200,
   "report":{
     "periodHours": 12,
-    "haedText": "📝 Отчет за преиод {period}ч.:",
+    "headText": "📝 Отчет за преиод {period}ч.:",
     "conditionText": "⚠️ Количество срабатываний условий:",
     "alertText": "🚨 Количество срабатываний оповещений:",
     "needSend": true
