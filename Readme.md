@@ -35,6 +35,13 @@ Example Configuration
 {
   "statisticInterval": 5,
   "stopThreadTimeout": 200,
+  "report": {
+      "periodHours": 1,
+      "headText": "📝 Report for period {period}ч.:",
+      "conditionText": "⚠ ️ Количество срабатываний условий:",
+      "alertText": "🚨 Количество срабатываний оповещений:",
+      "needSend": true
+  },
   "notifiers": [
     {
       "metric": "cpu_usage",
@@ -50,6 +57,12 @@ Example Configuration
 ### Configuration Parameters
 - `statisticInterval` (seconds) — How often metrics are collected and checked
 - `stopThreadTimeout` (ms) — Timeout for stopping the metrics thread
+- `report` — Regular report about notifiers
+    - `periodHours` — Period for send report
+    - `headText` — Text in head of report messgae allow `{period}` placeholder
+    - `conditionText` — Text in head of list with conditions
+    - `alertText` — Text in head of list with Alerts
+    - `needSend` — Enable report sendind
 - `notifiers[]` — Array of alert rules:
     - `metric` — Name of metric to monitor
     - `alert_count` — Consecutive occurrences required to trigger alert
@@ -57,6 +70,13 @@ Example Configuration
     - `tags` — Optional tags filter (array)
     - `alertStartMessage` — Alert trigger message with placeholders: `{metric}`, `{value}`, `{tags}`, `{duration}`
     - `alertStoppedMessage` — Alert recovery message
+
+Placeholders:
+- `{metric}`           Name of metric
+- `{value}`            Value of metric
+- `{tags}`             Tags of metric was alerted
+- `{tag:name_of_tag}`  Tag of metric was alerted by name
+- `{duration}`         Duration between alert start and alert stopped
 
 ## Usage
     1. Place notifier plugins in the `Plugins/` folder (e.g., `TelegramNotifierPlugin`, `VKNotifierPlugin`)

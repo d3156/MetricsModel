@@ -44,12 +44,12 @@ namespace NotifierSystem
         std::chrono::time_point<std::chrono::steady_clock> start_;
         std::string formatAlertMessage(const std::string &tmpl, Metrics::Metric *metric);
         std::unique_ptr<Metrics::Counter> alert_count_in_period;
+        std::map<Metrics::Metric *, std::pair<size_t, size_t>> alerts_count;
     };
 
     class NotifyManager
     {
         friend class ::MetricsModel;
-        std::map<Metrics::Metric *, std::pair<size_t, size_t>> alerts_count;
         std::unordered_map<std::string, Notify> notifiers;
         std::set<NotifierProvider *> alert_providers;
         NotifyManager() {}

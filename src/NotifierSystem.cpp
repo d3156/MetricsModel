@@ -1,5 +1,7 @@
 #include "NotifierSystem.hpp"
 #include "Metrics.hpp"
+#include <algorithm>
+#include <boost/algorithm/string/replace.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <PluginCore/Logger/Log.hpp>
 #include <chrono>
@@ -67,14 +69,10 @@ namespace NotifierSystem
     std::string Notify::formatAlertMessage(const std::string &tmpl, Metrics::Metric *metric)
     {
         std::string msg = tmpl;
-        size_t pos      = msg.find("{metric}");
-        if (pos != std::string::npos) msg.replace(pos, 8, metric->name);
-        pos = msg.find("{duraion}");
-
-        if (pos != std::string::npos) msg.replace(pos, 9, format_duration(std::chrono::steady_clock::now() - start_));
-        pos = msg.find("{value}");
-        if (pos != std::string::npos) msg.replace(pos, 7, std::to_string(metric->value_));
-        pos = msg.find("{tags}");
+        boost::replace_all(msg, "{metric}", metric->name);
+        boost::replace_all(msg, "{duraion}", format_duration(std::chrono::steady_clock::now() - start_));
+        boost::replace_all(msg, "{value}", std::to_string(metric->value_));
+        size_t pos = msg.find("{tags}");
         if (pos != std::string::npos) {
             std::string tags;
             for (const auto &t : metric->tags) {
@@ -82,6 +80,14 @@ namespace NotifierSystem
                 tags += t.first + "=" + t.second;
             }
             msg.replace(pos, 6, tags);
+        }
+        pos = msg.find("{tags:");
+        if (pos != std::string::npos) {
+            size_t pos_end = msg.find("}", pos);
+            if (pos_end == std::string::npos) return msg;
+            std::string key = msg.substr(pos + 6, pos_end - (pos + 6));
+            auto res        = std::ranges::find_if(metric->tags, [=](Metrics::Tag &val) { return val.first == key; });
+            if (res != metric->tags.end()) msg.replace(pos, pos_end - pos, res->second);
         }
         return msg;
     }
@@ -169,8 +175,6 @@ namespace NotifierSystem
     {
         if (alert_providers.empty()) return;
         std::vector<std::string> alerts;
-        if (alerts_count.size() == 0)
-            for (auto metric : statistics) alerts_count[metric] = {0, 0};
         for (auto metric : statistics) {
             auto notifier = notifiers.find(metric->name);
             if (notifier == notifiers.end()) continue;
@@ -181,7 +185,7 @@ namespace NotifierSystem
                 })) {
                 continue;
             }
-            auto &[current_count, current_total_count] = alerts_count[metric];
+            auto &[current_count, current_total_count] = notifier->second.alerts_count[metric];
 
             if (check_condition(notifier->second.condition, metric->value_)) {
                 current_count++;
@@ -248,12 +252,13 @@ namespace NotifierSystem
             alerts += "\n        " + std::to_string(*alert.second.alert_count_in_period) + " : " + alert.second.metric +
                       " " + alert.second.condition.tostring();
             alert.second.alert_count_in_period->exchange();
+            for (auto &[metric, condition_count] : alert.second.alerts_count)
+                if (condition_count.second) {
+                    conditions += "\n        " + std::to_string(condition_count.second) + " : " +
+                                  alert.second.formatAlertMessage(alert.second.alertStartMessage, metric);
+                    condition_count.second = 0;
+                }
         }
-        for (auto &[metric, condition_count] : alerts_count)
-            if (condition_count.second) {
-                conditions += "\n        " + std::to_string(condition_count.second) + " : " + metric->toString(false);
-                condition_count.second = 0;
-            }
         auto report_text =
             report.headText + "\n" + report.alertText + alerts + "\n" + report.conditionText + conditions;
         for (auto &provider : alert_providers) provider->alert(report_text);
