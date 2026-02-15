@@ -1,7 +1,7 @@
 #include "Metrics.hpp"
 #include "MetricsModel.hpp"
 #include "iostream"
-#include <PluginCore/Logger/Log.hpp>
+#include <PluginCore/Logger/Log>
 namespace Metrics
 {
 

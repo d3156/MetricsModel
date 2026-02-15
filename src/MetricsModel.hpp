@@ -2,7 +2,7 @@
 #include "MetricUploader.hpp"
 #include "Metrics.hpp"
 #include "NotifierSystem.hpp"
-#include <PluginCore/IModel.hpp>
+#include <PluginCore/IModel>
 #include <atomic>
 #include <boost/asio/io_context.hpp>
 #include <chrono>

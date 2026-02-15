@@ -1,6 +1,6 @@
 #include "MetricsModel.hpp"
 #include "NotifierSystem.hpp"
-#include <PluginCore/Logger/Log.hpp>
+#include <PluginCore/Logger/Log>
 #include <exception>
 #include <unistd.h>
 #include <sys/prctl.h>

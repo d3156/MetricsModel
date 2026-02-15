@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <PluginCore/Logger/Log.hpp>
+#include <PluginCore/Logger/Log>
 #include <chrono>
 #include <memory>
 #include <string>
