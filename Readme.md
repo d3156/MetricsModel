@@ -3,8 +3,8 @@
 `MetricsModel` is a centralized metrics aggregation system that collects metrics from plugins and supports configurable alerting. When alert conditions are met, it forwards alerts to notifier plugins, which deliver notifications to external systems like Telegram, VK, or custom applications.
 
 `MetricsModel` provides centralized metrics aggregation with bi-directional integration:
-- Import metrics from external systems via importer plugins ([Prometheus](https://github.com/d3156/PrometheusImporterPlugin), etc.)
-- Export metrics to external systems via exporter plugins ([Prometheus](https://github.com/d3156/PrometheusExporterPlugin), Grafana, etc.)
+- Import metrics from external systems via importer plugins ([Prometheus](https://gitlab.bubki.zip/d3156/PrometheusImporterPlugin), etc.)
+- Export metrics to external systems via exporter plugins ([Prometheus](https://gitlab.bubki.zip/d3156/PrometheusExporterPlugin), Grafana, etc.)
 - Internal metrics collection from application plugins
 - Alerting with configurable conditions and notifier plugins (Telegram, VK, custom)
 
@@ -86,7 +86,7 @@ Placeholders:
         - Check conditions per `statisticInterval`
         - Forward alerts to available notifier plugins when conditions trigger
 
-## Example: [PingNode Integration](https://github.com/d3156/PingNode)
+## Example: [PingNode Integration](https://gitlab.bubki.zip/d3156/PingNode)
 Config `./configs/MetricsModel.json`
 ```json
 {
