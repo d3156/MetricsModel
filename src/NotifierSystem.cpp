@@ -70,7 +70,7 @@ namespace NotifierSystem
     {
         std::string msg = tmpl;
         boost::replace_all(msg, "{metric}", metric->name);
-        boost::replace_all(msg, "{duraion}", format_duration(std::chrono::steady_clock::now() - start_));
+        boost::replace_all(msg, "{duration}", format_duration(std::chrono::steady_clock::now() - start_));
         boost::replace_all(msg, "{value}", std::to_string(metric->value_));
         size_t pos = msg.find("{tags}");
         if (pos != std::string::npos) {
