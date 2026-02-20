@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 #include <chrono>
+#include <BaseConfig>
 
 namespace NotifierSystem
 {
@@ -19,27 +20,32 @@ namespace NotifierSystem
     enum class ConditionType { Greater, Less, GreaterEqual, LessEqual, Equal, Range, Error };
 
     struct Condition {
-        std::string text = "";
-        ConditionType type;
+        Condition(d3156::Config *parent)
+            : text("text", "", "string", parent), delta_mode("delta_mode", false, "bool", parent)
+        {
+        }
+        d3156::ConfigString text;
+        ConditionType type = ConditionType::Error;
         size_t value;     // для > < >= <= =
         size_t min_value; // для Range
         size_t max_value; // для Range
 
-        bool delta_mode  = false;
+        d3156::ConfigBool delta_mode;
         size_t lastValue = 0;
         std::string tostring();
+
+        void init();
     };
 
-    struct Notify {
+    struct Notify : public d3156::Config {
+        Notify() : d3156::Config(""), condition(this) {}
         /// From config
-        std::string metric = "";
-        size_t alert_count = 0; /// Количество повторов для срабатывания
         Condition condition;
-        std::set<std::string> tags = {}; // optional
-
-        /// Runtime
-        std::string alertStartMessage   = "Alert! {metric}:{value} {tags}";
-        std::string alertStoppedMessage = "Alert stopped! {metric}:{value} {tags}";
+        CONFIG_STRING(metric, "");
+        CONFIG_UINT(alert_count, 0);     /// Количество повторов для срабатывания
+        CONFIG_ARRAY(tags, std::string); // optional
+        CONFIG_STRING(alertStartMessage, "Alert! {metric}:{value} {tags}");
+        CONFIG_STRING(alertStoppedMessage, "Alert stopped! {metric}:{value} {tags}");
 
         std::chrono::time_point<std::chrono::steady_clock> start_;
         std::string formatAlertMessage(const std::string &tmpl, Metrics::Metric *metric);
@@ -50,22 +56,22 @@ namespace NotifierSystem
     class NotifyManager
     {
         friend class ::MetricsModel;
-        std::unordered_map<std::string, Notify> notifiers;
+        std::unordered_map<std::string, Notify> notifiers_map;
         std::set<NotifierProvider *> alert_providers;
-        NotifyManager() {}
-        static boost::property_tree::ptree getDefault();
-        bool parseSettings(const boost::property_tree::ptree &notifiers);
+        NotifyManager(d3156::Config *parent) : report(parent), notifiers("notifiers", parent) {}
         void upload(std::set<Metrics::Metric *> &statistics);
-        void reporter();        
-        struct Report {
-            size_t periodHours        = 12;
-            std::string headText      = "📝 Отчет за преиод {period}ч.:";
-            std::string conditionText = "⚠️ Количество срабатываний условий:";
-            std::string alertText     = "🚨 Количество срабатываний оповещений:";
-            bool needSend             = true;
-            bool parseSettings(const boost::property_tree::ptree &report);
-            static boost::property_tree::ptree getDefault();
+        void reporter();
+        void init();
+
+        struct Report : public d3156::Config {
+            Report(d3156::Config *parent) : d3156::Config("report", parent) {}
+            CONFIG_UINT(periodHours, 12);
+            CONFIG_STRING(headText, "📝 Отчет за преиод {period}ч.:");
+            CONFIG_STRING(conditionText, "⚠️ Количество срабатываний условий:");
+            CONFIG_STRING(alertText, "🚨 Количество срабатываний оповещений:");
+            CONFIG_BOOL(needSend, true);
             std::chrono::time_point<std::chrono::steady_clock> last_sended_report;
         } report;
+        d3156::ConfigArray<Notify> notifiers;
     };
 }

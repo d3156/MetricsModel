@@ -3,10 +3,6 @@
 #include "Metrics.hpp"
 #include "NotifierSystem.hpp"
 #include <PluginCore/IModel>
-#include <atomic>
-#include <boost/asio/io_context.hpp>
-#include <chrono>
-#include <set>
 #include <boost/thread.hpp>
 #include <boost/asio.hpp>
 
@@ -42,14 +38,13 @@ public:
 
     boost::asio::io_context &getIO();
 
+    struct MetricsConfig : public d3156::Config {
+        MetricsConfig() : d3156::Config("") {}
+        CONFIG_UINT(statisticInterval, 5);
+        CONFIG_UINT(stopThreadTimeout, 200);
+    } config;
+
 private:
-    void parseSettings();
-
-    std::string configPath = "./configs/MetricsModel.json";
-
-    std::chrono::seconds statisticInterval        = std::chrono::seconds(5);
-    boost::chrono::milliseconds stopThreadTimeout = boost::chrono::milliseconds(200);
-
     boost::thread thread_; /// Метрики будут работать в отдельном потоке, чтобы не
                            /// терять данные при возможном зависании плагинов.
     std::set<Metrics::Uploader *> uploaders_;
@@ -66,5 +61,5 @@ private:
     void run();
     void timer_handler(const boost::system::error_code &ec);
 
-    NotifierSystem::NotifyManager notifier_manager;
+    NotifierSystem::NotifyManager notifier_manager = {&config};
 };

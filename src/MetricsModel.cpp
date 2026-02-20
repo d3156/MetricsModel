@@ -1,12 +1,8 @@
 #include "MetricsModel.hpp"
 #include "NotifierSystem.hpp"
 #include <PluginCore/Logger/Log>
-#include <exception>
-#include <unistd.h>
 #include <sys/prctl.h>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <filesystem>
+#include <chrono>
 
 void MetricsModel::unregisterUploader(Metrics::Uploader *uploader)
 {
@@ -24,15 +20,12 @@ void MetricsModel::registerUploader(Metrics::Uploader *uploader)
 void MetricsModel::run()
 {
     prctl(PR_SET_NAME, "MetricsModel", 0, 0, 0);
-    upload_timer_.expires_after(statisticInterval);
+    upload_timer_.expires_after(std::chrono::seconds(config.statisticInterval.value));
     upload_timer_.async_wait(std::bind(&MetricsModel::timer_handler, this, std::placeholders::_1));
     io_.run();
 }
 
-void MetricsModel::registerArgs(d3156::Args::Builder &bldr)
-{
-    bldr.setVersion(FULL_NAME).addOption(configPath, "MetricsModelPath", "path to config for MetricsModel.json");
-}
+void MetricsModel::registerArgs(d3156::Args::Builder &bldr) { bldr.setVersion(FULL_NAME); }
 
 MetricsModel::~MetricsModel()
 {
@@ -43,11 +36,11 @@ MetricsModel::~MetricsModel()
         upload_timer_.cancel();
         G_LOG(1, "Metrics timer canceled");
         if (!thread_.joinable()) return;
-        G_LOG(1, "Thread joinable, try join in " << stopThreadTimeout.count() << " milliseconds");
-        if (thread_.timed_join(stopThreadTimeout)) return;
+        G_LOG(1, "Thread joinable, try join in " << config.stopThreadTimeout << " milliseconds");
+        if (thread_.timed_join(boost::chrono::milliseconds(config.stopThreadTimeout.value))) return;
         Y_LOG(1, "Metrics upload thread was not terminated, attempting to force stop io_context...");
         io_.stop();
-        if (thread_.timed_join(stopThreadTimeout)) {
+        if (thread_.timed_join(boost::chrono::milliseconds(config.stopThreadTimeout.value))) {
             G_LOG(1, "io_context force stopped successfully");
             return;
         }
@@ -75,13 +68,13 @@ void MetricsModel::timer_handler(const boost::system::error_code &ec)
         R_LOG(1, "Exception throwed in timer_handler: " << e.what());
     }
     if (stopToken) return;
-    upload_timer_.expires_after(statisticInterval);
+    upload_timer_.expires_after(std::chrono::seconds(config.statisticInterval.value));
     upload_timer_.async_wait(std::bind(&MetricsModel::timer_handler, this, std::placeholders::_1));
 }
 
 void MetricsModel::postInit()
 {
-    parseSettings();
+    notifier_manager.init();
     thread_ = boost::thread([this]() { this->run(); });
 }
 
@@ -91,47 +84,6 @@ MetricsModel *&MetricsModel::instance()
 {
     static MetricsModel *static_instance = nullptr;
     return static_instance;
-}
-
-using boost::property_tree::ptree;
-
-namespace fs = std::filesystem;
-
-void MetricsModel::parseSettings()
-{
-    if (!fs::exists(configPath)) {
-        Y_LOG(1, "Config file " << configPath << " not found. Creating default config...");
-
-        fs::create_directories(fs::path(configPath).parent_path());
-
-        ptree pt;
-        pt.put("statisticInterval", statisticInterval.count());
-        pt.put("stopThreadTimeout", stopThreadTimeout.count());
-        pt.add_child("notifiers", NotifierSystem::NotifyManager::getDefault());
-        pt.add_child("report", NotifierSystem::NotifyManager::Report::getDefault());
-        boost::property_tree::write_json(configPath, pt);
-
-        G_LOG(1, " Default config created at " << configPath);
-        return;
-    }
-    try {
-        ptree pt;
-        read_json(configPath, pt);
-
-        statisticInterval = std::chrono::seconds(pt.get<std::uint32_t>("statisticInterval"));
-        stopThreadTimeout = boost::chrono::milliseconds(pt.get<std::uint32_t>("stopThreadTimeout"));
-        if (!notifier_manager.parseSettings(pt.get_child("notifiers", ptree{}))) {
-            R_LOG(1, "Error on load notifiers from config " << configPath);
-            return;
-        };
-        if (!notifier_manager.report.parseSettings(pt.get_child("report", ptree{}))) {
-            R_LOG(1, "Error on load report from config " << configPath);
-            return;
-        };
-        G_LOG(1, "Config loaded from " << configPath);
-    } catch (std::exception e) {
-        R_LOG(1, "Error on load config " << configPath << " " << e.what());
-    }
 }
 
 boost::asio::io_context &MetricsModel::getIO() { return io_; }
