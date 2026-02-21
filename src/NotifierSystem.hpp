@@ -21,7 +21,7 @@ namespace NotifierSystem
 
     struct Condition {
         Condition(d3156::Config *parent)
-            : text("text", "", "string", parent), delta_mode("delta_mode", false, "bool", parent)
+            : text("condition", "", "string", parent), delta_mode("delta_mode", false, "bool", parent)
         {
         }
         d3156::ConfigString text;
