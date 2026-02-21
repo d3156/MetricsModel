@@ -9,6 +9,8 @@
 #include <string>
 #include <iomanip>
 
+#define LOG_NAME "NotifierSystem"
+
 using boost::property_tree::ptree;
 namespace NotifierSystem
 {
@@ -190,7 +192,7 @@ namespace NotifierSystem
     {
         try {
             for (auto &n : notifiers.items) {
-                if (n.name.empty()) continue;
+                if (n.metric.value.empty()) continue;
                 n.condition.init();
                 LOG(5, n.condition.tostring());
                 if (n.condition.type == ConditionType::Error) {
@@ -200,8 +202,8 @@ namespace NotifierSystem
                 std::string tags_joined = "";
                 for (auto &t : n.tags.items) tags_joined += (tags_joined.size() ? ", " : "") + t;
                 n.alert_count_in_period = std::make_unique<Metrics::Counter>(
-                    "Notify_count_in_period", std::vector<Metrics::Tag>{{"metric", n.name}, {"tags", tags_joined}});
-                notifiers_map.emplace(n.name, std::move(n));
+                    "Notify_count_in_period", std::vector<Metrics::Tag>{{"metric", n.metric.value}, {"tags", tags_joined}});
+                notifiers_map.emplace(n.metric.value, std::move(n));
             }
             notifiers.items.clear();
             notifiers.name.clear();
