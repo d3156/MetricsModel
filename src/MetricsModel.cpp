@@ -78,7 +78,9 @@ void MetricsModel::postInit()
     thread_ = boost::thread([this]() { this->run(); });
 }
 
-void MetricsModel::init() {}
+void MetricsModel::init() {
+    instance() = this;
+}
 
 MetricsModel *&MetricsModel::instance()
 {

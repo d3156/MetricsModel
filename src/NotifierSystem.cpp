@@ -149,36 +149,36 @@ namespace NotifierSystem
         for (auto metric : statistics) {
             auto notifier = notifiers_map.find(metric->name);
             if (notifier == notifiers_map.end()) continue;
-            if (!notifier->second.tags.items.empty() &&
-                !std::all_of(notifier->second.tags.items.begin(), notifier->second.tags.items.end(),
-                             [&](const std::string &nt) {
+            if (!notifier->second->tags.items.empty() &&
+                !std::all_of(notifier->second->tags.items.begin(), notifier->second->tags.items.end(),
+                             [&](const auto &nt) {
                                  return std::any_of(metric->tags.begin(), metric->tags.end(),
-                                                    [&](const Metrics::Tag &mt) { return mt.second == nt; });
+                                                    [&](const Metrics::Tag &mt) { return mt.second == *nt; });
                              })) {
                 continue;
             }
-            auto &[current_count, current_total_count] = notifier->second.alerts_count[metric];
+            auto &[current_count, current_total_count] = notifier->second->alerts_count[metric];
 
-            if (check_condition(notifier->second.condition, metric->value_)) {
+            if (check_condition(notifier->second->condition, metric->value_)) {
                 current_count++;
                 current_total_count++;
 
-                Y_LOG(100, "condition checked: " << notifier->second.condition.tostring() << "alert count "
+                Y_LOG(100, "condition checked: " << notifier->second->condition.tostring() << "alert count "
                                                  << current_count << " for metric: " << metric->toString(false));
-                if (current_count == notifier->second.alert_count) {
-                    Y_LOG(100, "alert start : " << notifier->second.condition.tostring()
+                if (current_count == notifier->second->alert_count) {
+                    Y_LOG(100, "alert start : " << notifier->second->condition.tostring()
                                                 << " for metric: " << metric->toString(false));
                     alerts.emplace_back(
-                        notifier->second.formatAlertMessage(notifier->second.alertStartMessage, metric));
-                    notifier->second.start_ = std::chrono::steady_clock::now();
-                    (*notifier->second.alert_count_in_period)++;
+                        notifier->second->formatAlertMessage(notifier->second->alertStartMessage, metric));
+                    notifier->second->start_ = std::chrono::steady_clock::now();
+                    (*notifier->second->alert_count_in_period)++;
                 }
             } else {
-                if (current_count >= notifier->second.alert_count) {
-                    Y_LOG(100, "alert stop : " << notifier->second.condition.tostring()
+                if (current_count >= notifier->second->alert_count) {
+                    Y_LOG(100, "alert stop : " << notifier->second->condition.tostring()
                                                << " for metric: " << metric->toString(false));
                     alerts.emplace_back(
-                        notifier->second.formatAlertMessage(notifier->second.alertStoppedMessage, metric));
+                        notifier->second->formatAlertMessage(notifier->second->alertStoppedMessage, metric));
                 }
                 current_count = 0;
             }
@@ -192,18 +192,19 @@ namespace NotifierSystem
     {
         try {
             for (auto &n : notifiers.items) {
-                if (n.metric.value.empty()) continue;
-                n.condition.init();
-                LOG(5, n.condition.tostring());
-                if (n.condition.type == ConditionType::Error) {
-                    R_LOG(1, " invalid condition in notifier for metric " << n.metric.value);
+                if (n->metric.value.empty()) continue;
+                n->condition.init();
+                LOG(5, n->condition.tostring());
+                if (n->condition.type == ConditionType::Error) {
+                    R_LOG(1, " invalid condition in notifier for metric " << n->metric.value);
                     continue;
                 }
                 std::string tags_joined = "";
-                for (auto &t : n.tags.items) tags_joined += (tags_joined.size() ? ", " : "") + t;
-                n.alert_count_in_period = std::make_unique<Metrics::Counter>(
-                    "Notify_count_in_period", std::vector<Metrics::Tag>{{"metric", n.metric.value}, {"tags", tags_joined}});
-                notifiers_map.emplace(n.metric.value, std::move(n));
+                for (auto &t : n->tags.items) tags_joined += (tags_joined.size() ? ", " : "") + *t;
+                n->alert_count_in_period = std::make_unique<Metrics::Counter>(
+                    "Notify_count_in_period",
+                    std::vector<Metrics::Tag>{{"metric", n->metric.value}, {"tags", tags_joined}});
+                notifiers_map.emplace(n->metric.value, std::move(n));
             }
             notifiers.items.clear();
             notifiers.name.clear();
@@ -224,13 +225,13 @@ namespace NotifierSystem
         report.last_sended_report = std::chrono::steady_clock::now();
         std::string conditions = "", alerts = "";
         for (auto &alert : notifiers_map) {
-            alerts += "\n        " + std::to_string(*alert.second.alert_count_in_period) + " : " +
-                      alert.second.metric.value + " " + alert.second.condition.tostring();
-            alert.second.alert_count_in_period->exchange();
-            for (auto &[metric, condition_count] : alert.second.alerts_count)
+            alerts += "\n        " + std::to_string(*alert.second->alert_count_in_period) + " : " +
+                      alert.second->metric.value + " " + alert.second->condition.tostring();
+            alert.second->alert_count_in_period->exchange();
+            for (auto &[metric, condition_count] : alert.second->alerts_count)
                 if (condition_count.second) {
                     conditions += "\n        " + std::to_string(condition_count.second) + " : " +
-                                  alert.second.formatAlertMessage(alert.second.alertStartMessage, metric);
+                                  alert.second->formatAlertMessage(alert.second->alertStartMessage, metric);
                     condition_count.second = 0;
                 }
         }

@@ -3,6 +3,7 @@
 #include <boost/property_tree/ptree_fwd.hpp>
 #include <cstddef>
 #include <map>
+#include <memory>
 #include <set>
 #include <chrono>
 #include <BaseConfig>
@@ -56,7 +57,7 @@ namespace NotifierSystem
     class NotifyManager
     {
         friend class ::MetricsModel;
-        std::unordered_map<std::string, Notify> notifiers_map;
+        std::unordered_map<std::string, std::unique_ptr<Notify>> notifiers_map;
         std::set<NotifierProvider *> alert_providers;
         NotifyManager(d3156::Config *parent) : report(parent), notifiers("notifiers", parent) {}
         void upload(std::set<Metrics::Metric *> &statistics);
