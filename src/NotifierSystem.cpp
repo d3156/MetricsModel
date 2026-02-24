@@ -19,10 +19,7 @@ namespace NotifierSystem
     {
         auto value = metric_value;
         if (c.delta_mode) {
-            if (c.lastValue)
-                value = metric_value - c.lastValue;
-            else
-                value = 0;
+            value = c.lastValue ? metric_value - c.lastValue : 0;
             Y_LOG(100, " metric_value:" << metric_value << " value:" << value << c.tostring());
             c.lastValue = metric_value;
         } else
@@ -160,9 +157,9 @@ namespace NotifierSystem
             auto &[current_count, current_total_count] = notifier->second->alerts_count[metric];
 
             if (check_condition(notifier->second->condition, metric->value_)) {
+                if (current_count == 0) notifier->second->start_ = std::chrono::steady_clock::now();
                 current_count++;
                 current_total_count++;
-
                 Y_LOG(100, "condition checked: " << notifier->second->condition.tostring() << "alert count "
                                                  << current_count << " for metric: " << metric->toString(false));
                 if (current_count == notifier->second->alert_count) {
@@ -170,7 +167,6 @@ namespace NotifierSystem
                                                 << " for metric: " << metric->toString(false));
                     alerts.emplace_back(
                         notifier->second->formatAlertMessage(notifier->second->alertStartMessage, metric));
-                    notifier->second->start_ = std::chrono::steady_clock::now();
                     (*notifier->second->alert_count_in_period)++;
                 }
             } else {
